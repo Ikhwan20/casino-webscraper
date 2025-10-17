@@ -8,8 +8,8 @@ Git
 Quick Deployment
 1. Clone the Repository
 
-git clone https://github.com/YOUR_USERNAME/casino-scraper.git
-cd casino-scraper
+git clone https://github.com/Ikhwan20/casino-webscraper.git
+cd casino-webscraper
 
 2. Configure Environment (Optional)
 Edit docker-compose.yml if you want to change settings
