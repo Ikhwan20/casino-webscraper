@@ -1,0 +1,62 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  casino-scraper:
+    build: .
+    container_name: casino-scraper
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      - TZ=Asia/Manila
+      - MAX_PAGES_PER_CASINO=5
+      - PYTHONUNBUFFERED=1
+    
+    # Volumes for persistent data
+    volumes:
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./archive:/app/archive
+      - ./casino_scraper.py:/app/casino_scraper.py  # For easy updates
+    
+    # Cron schedule - runs daily at 8 AM
+    command: >
+      sh -c "
+      echo '0 8 * * * cd /app && python casino_scraper.py >> /app/logs/scraper_\$(date +\%Y\%m\%d_\%H\%M\%S).log 2>&1' > /etc/cron.d/scraper &&
+      chmod 0644 /etc/cron.d/scraper &&
+      crontab /etc/cron.d/scraper &&
+      cron &&
+      tail -f /dev/null
+      "
+    
+    # Resource limits (optional)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Add a web dashboard
+  dashboard:
+    image: nginx:alpine
+    container_name: scraper-dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./output:/usr/share/nginx/html/output:ro
+      - ./logs:/usr/share/nginx/html/logs:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - casino-scraper
