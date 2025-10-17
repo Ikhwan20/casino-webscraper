@@ -37,26 +37,26 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright browsers
+RUN playwright install-deps
 RUN playwright install chromium
-RUN playwright install-deps chromium
 
 # Copy application files
 COPY casino_scraper.py .
-COPY run_scraper.sh .
+COPY entrypoint.sh .
 
 # Make scripts executable
-RUN chmod +x run_scraper.sh
+RUN chmod +x entrypoint.sh
 
 # Create directories for outputs and logs
 RUN mkdir -p /app/output /app/logs /app/archive
 
-# Set timezone (optional - adjust to your timezone)
+# Set timezone
 ENV TZ=Asia/Manila
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Health check
 HEALTHCHECK --interval=1h --timeout=10s --start-period=5s --retries=3 \
-    CMD test -f /app/logs/scraper_$(date +%Y%m%d)*.log || exit 1
+    CMD test -d /app/output || exit 1
 
-# Default command
-CMD ["python", "casino_scraper.py"]
+# Use entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
