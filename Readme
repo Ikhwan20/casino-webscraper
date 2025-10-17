@@ -22,7 +22,7 @@ nano docker-compose.yml
 # - Cron schedule: 0 8 * * * (daily at 8 AM)
 
 3. Build and Start
-bash# Build the Docker image
+
 docker-compose build
 
 # Start the containers
@@ -30,8 +30,10 @@ docker-compose up -d
 
 # Verify containers are running
 docker-compose ps
+
 4. Verify Installation
-bash# Check logs
+
+# Check logs
 docker-compose logs -f casino-scraper
 
 # Run scraper manually (first test)
@@ -42,13 +44,14 @@ ls -lah output/
 
 # Verify cron job is set up
 docker-compose exec casino-scraper crontab -l
+
 Daily Operation
 The scraper runs automatically every day at 8:00 AM via cron.
+
 Manual Trigger
-bash# Run scraper immediately
 docker-compose exec casino-scraper python casino_scraper.py
+
 View Logs
-bash# Live logs
 docker-compose logs -f casino-scraper
 
 # View specific log file
