@@ -57,8 +57,9 @@ docker-compose logs -f casino-scraper
 # View specific log file
 ls -lah logs/
 tail -f logs/scraper_YYYYMMDD_HHMMSS.log
+
 Access Data
-bash# View scraped data
+# View scraped data
 ls -lah output/
 
 # List all promo folders
@@ -69,9 +70,10 @@ cat output/promo_TIMESTAMP/_jackpots.json
 
 # View index
 cat output/promo_TIMESTAMP/_index.json
+
 Maintenance
 Stop/Start/Restart
-bash# Stop
+# Stop
 docker-compose stop
 
 # Start
@@ -82,8 +84,9 @@ docker-compose restart
 
 # Stop and remove
 docker-compose down
+
 Update Script
-bash# Pull latest changes
+# Pull latest changes
 git pull origin main
 
 # Restart containers
