@@ -18,12 +18,12 @@ services:
       - ./output:/app/output
       - ./logs:/app/logs
       - ./archive:/app/archive
-      - ./casino_scraper.py:/app/casino_scraper.py  # For easy updates
+      - ./casino_scraper.py:/app/casino_scraper.py
     
-    # Cron schedule - runs daily at 8 AM
+    # Fixed command with proper escaping
     command: >
       sh -c "
-      echo '0 8 * * * cd /app && python casino_scraper.py >> /app/logs/scraper_\$(date +\%Y\%m\%d_\%H\%M\%S).log 2>&1' > /etc/cron.d/scraper &&
+      echo '0 8 * * * cd /app && python casino_scraper.py >> /app/logs/scraper_$$(date +%%Y%%m%%d_%%H%%M%%S).log 2>&1' > /etc/cron.d/scraper &&
       chmod 0644 /etc/cron.d/scraper &&
       crontab /etc/cron.d/scraper &&
       cron &&
@@ -46,17 +46,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  # Optional: Add a web dashboard
-  dashboard:
-    image: nginx:alpine
-    container_name: scraper-dashboard
-    restart: unless-stopped
-    ports:
-      - "8080:80"
-    volumes:
-      - ./output:/usr/share/nginx/html/output:ro
-      - ./logs:/usr/share/nginx/html/logs:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - casino-scraper
