@@ -5,7 +5,7 @@ set -e
 
 # Create cron job
 echo "Setting up cron job..."
-echo '0 8 * * * cd /app && python casino_scraper.py >> /app/logs/scraper_$(date +\%Y\%m\%d_\%H\%M\%S).log 2>&1' > /etc/cron.d/scraper
+echo '0 8 * * * cd /app && python3 casino_scraper.py >> /app/logs/scraper_$(date +\%Y\%m\%d_\%H\%M\%S).log 2>&1' > /etc/cron.d/scraper
 
 # Set permissions
 chmod 0644 /etc/cron.d/scraper
