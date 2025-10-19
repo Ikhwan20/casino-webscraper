@@ -21,6 +21,9 @@ RUN playwright install --with-deps chromium
 COPY casino_scraper.py .
 COPY entrypoint.sh .
 
+COPY cleanup.sh .
+RUN chmod +x cleanup.sh
+
 # Make entrypoint executable
 RUN chmod +x entrypoint.sh
 
