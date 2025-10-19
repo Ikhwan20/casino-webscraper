@@ -1,7 +1,8 @@
 FROM nginx:alpine
 
 # Remove default config
-RUN rm /etc/nginx/conf.d/default.conf
+RUN rm -rf /etc/nginx/conf.d/*
+RUN rm -f /usr/share/nginx/html/index.html /usr/share/nginx/html/50x.html
 
 # Copy custom config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
