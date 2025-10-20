@@ -36,7 +36,7 @@ class Ren3Config:
         self.workspace_id = os.getenv('REN3_WORKSPACE_ID')
         self.agent_uuid = os.getenv('REN3_AGENT_UUID')
         self.agent_folder = os.getenv('REN3_AGENT_FOLDER')
-        self.batch_size = int(os.getenv('BATCH_SIZE', '30'))
+        self.batch_size = int(os.getenv('BATCH_SIZE', '1'))
         self.poll_interval = int(os.getenv('POLL_INTERVAL', '15'))
         self.max_retries = int(os.getenv('MAX_RETRIES', '3'))
         
@@ -157,7 +157,7 @@ class Ren3AgentProcessor:
             result = response.json()
             
             if result.get('success'):
-                logger.info(f"✓ Uploaded {len(batch)} files successfully")
+                logger.info(f"Uploaded {len(batch)} files successfully")
                 return result
             else:
                 raise Exception(f"Upload failed: {result}")
@@ -239,7 +239,7 @@ class Ren3AgentProcessor:
                             text = log.get('text', '')
                             if 'completed' in text.lower():
                                 elapsed = time.time() - start_time
-                                logger.info(f"✓ Agent completed in {elapsed:.0f} seconds")
+                                logger.info(f"Agent completed in {elapsed:.0f} seconds")
                                 return True
                         
                         # Show progress updates
@@ -272,7 +272,7 @@ class Ren3AgentProcessor:
         if response.get('success'):
             job_details = response['returnObject']
             output_folder = job_details['agentJob']['output_folder']
-            logger.info(f"✓ Output folder: {output_folder}")
+            logger.info(f"Output folder: {output_folder}")
             return job_details
         else:
             raise Exception(f"Failed to get job details: {response}")
@@ -303,7 +303,7 @@ class Ren3AgentProcessor:
         
         if response.get('success'):
             files = response.get('returnObject', [])
-            logger.info(f"✓ Found {len(files)} output files")
+            logger.info(f"Found {len(files)} output files")
             return files
         else:
             raise Exception(f"Failed to get output files: {response}")
@@ -352,7 +352,7 @@ class Ren3AgentProcessor:
         
         # Save as Excel
         combined_df.to_excel(output_path, index=False, engine='openpyxl')
-        logger.info(f"✓ Combined Excel saved: {output_path}")
+        logger.info(f"Combined Excel saved: {output_path}")
         logger.info(f"  Total rows: {len(combined_df)}")
         
         return output_path
@@ -438,7 +438,7 @@ class Ren3AgentProcessor:
                     self.download_csv(csv_file['uuid'], csv_path)
                     csv_files.append(csv_path)
                     
-                    logger.info(f"✓ Batch {batch_num} completed successfully")
+                    logger.info(f"Batch {batch_num} completed successfully")
                     
                 except Exception as e:
                     logger.error(f"✗ Batch {batch_num} failed: {e}")
