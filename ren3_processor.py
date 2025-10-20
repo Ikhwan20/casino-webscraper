@@ -54,8 +54,11 @@ class Ren3AgentProcessor:
         self.config = config
         self.session = requests.Session()
         self.session.headers.update({
-            'Content-Type': 'application/json',
-            'User-Agent': 'Ren3-Processor/1.0'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Origin': 'https://ren3.ai',
+            'Referer': 'https://ren3.ai/'
         })
     
     def _api_call(self, endpoint: str, data: dict, files: dict = None, 
@@ -112,8 +115,12 @@ class Ren3AgentProcessor:
         """Upload batch of JSON files to Ren3"""
         logger.info(f"Uploading {len(batch)} files...")
         
-        # Prepare multipart form data
+        # Prepare files list (don't use files parameter in _api_call)
         files = []
+        for json_file in batch:
+            files.append(('file', (json_file.name, open(json_file, 'rb'), 'application/json')))
+        
+        # Prepare form data
         form_data = {
             'workspaceid': self.config.workspace_id,
             'useruuid': self.config.user_id,
@@ -131,22 +138,29 @@ class Ren3AgentProcessor:
             })
         }
         
-        # Add all files
-        for json_file in batch:
-            files.append(('file', (json_file.name, open(json_file, 'rb'), 'application/json')))
+        url = f"{self.config.api_url}/upload_agenttmpfiles"
         
         try:
-            response = self._api_call('/upload_agenttmpfiles', data=form_data, files=files)
+            # Make direct request without using _api_call
+            response = self.session.post(url, data=form_data, files=files, timeout=300)
             
             # Close all file handles
             for _, (_, file_obj, _) in files:
                 file_obj.close()
             
-            if response.get('success'):
-                logger.info(f"Uploaded {len(batch)} files successfully")
-                return response
+            # Log response for debugging
+            logger.info(f"Upload response status: {response.status_code}")
+            if response.status_code != 200:
+                logger.error(f"Upload response: {response.text[:500]}")
+            
+            response.raise_for_status()
+            result = response.json()
+            
+            if result.get('success'):
+                logger.info(f"✓ Uploaded {len(batch)} files successfully")
+                return result
             else:
-                raise Exception(f"Upload failed: {response}")
+                raise Exception(f"Upload failed: {result}")
                 
         except Exception as e:
             # Close file handles on error
