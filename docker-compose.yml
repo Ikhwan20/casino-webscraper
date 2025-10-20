@@ -1,4 +1,3 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
@@ -12,20 +11,18 @@ services:
       - MAX_PAGES_PER_CASINO=5
       - PYTHONUNBUFFERED=1
     
+    env_file:
+      - .env.ren3
+    
     volumes:
       - ./output:/app/output
       - ./logs:/app/logs
       - ./archive:/app/archive
+      - ./processed:/app/processed
       - ./casino_scraper.py:/app/casino_scraper.py
-    
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '2'
-    #       memory: 2G
-    #     reservations:
-    #       cpus: '1'
-    #       memory: 1G
+      - ./ren3_processor.py:/app/ren3_processor.py
+      - ./run_processor.py:/app/run_processor.py
+      - ./.env.ren3:/app/.env.ren3
     
     logging:
       driver: "json-file"
@@ -33,11 +30,10 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Optional: Web dashboard
   dashboard:
     build:
       context: .
-      dockerfile: nginx.dockerfile
+      dockerfile: dashboard.Dockerfile
     container_name: scraper-dashboard
     restart: unless-stopped
     ports:
@@ -45,5 +41,6 @@ services:
     volumes:
       - ./output:/usr/share/nginx/html/output:ro
       - ./logs:/usr/share/nginx/html/logs:ro
+      - ./processed:/usr/share/nginx/html/processed:ro
     depends_on:
       - casino-scraper

@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python packages
-RUN pip install --no-cache-dir -r requirements.txt
+# Add pandas and openpyxl for CSV processing
+RUN pip install --no-cache-dir requests beautifulsoup4 playwright pandas openpyxl
 
 # Install Playwright and its dependencies
 RUN playwright install --with-deps chromium
@@ -29,6 +29,10 @@ RUN chmod +x entrypoint.sh
 
 # Create directories
 RUN mkdir -p /app/output /app/logs /app/archive
+
+# Copy ren3 processor
+COPY ren3_processor.py .
+RUN chmod +x ren3_processor.py
 
 # Set timezone
 ENV TZ=Asia/Manila
