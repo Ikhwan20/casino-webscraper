@@ -33,7 +33,7 @@ services:
   dashboard:
     build:
       context: .
-      dockerfile: nginx.Dockerfile
+      dockerfile: nginx.dockerfile
     container_name: scraper-dashboard
     restart: unless-stopped
     ports:
