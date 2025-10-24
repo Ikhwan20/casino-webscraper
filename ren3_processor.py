@@ -36,7 +36,6 @@ class Ren3Config:
         self.workspace_id = os.getenv('REN3_WORKSPACE_ID')
         self.agent_uuid = os.getenv('REN3_AGENT_UUID')
         self.agent_folder = os.getenv('REN3_AGENT_FOLDER')
-        self.batch_size = int(os.getenv('BATCH_SIZE', '1'))
         self.poll_interval = int(os.getenv('POLL_INTERVAL', '15'))
         self.max_retries = int(os.getenv('MAX_RETRIES', '3'))
         
@@ -100,17 +99,7 @@ class Ren3AgentProcessor:
         json_files.sort()
         logger.info(f"Found {len(json_files)} JSON files to process")
         return json_files
-    
-    def create_batches(self, json_files: List[Path]) -> List[List[Path]]:
-        """Split JSON files into batches"""
-        batches = []
-        for i in range(0, len(json_files), self.config.batch_size):
-            batch = json_files[i:i + self.config.batch_size]
-            batches.append(batch)
-        
-        logger.info(f"Created {len(batches)} batches of up to {self.config.batch_size} files")
-        return batches
-    
+
     def upload_files(self, batch: List[Path], temp_folder_uuid: str) -> dict:
         """Upload batch of JSON files to Ren3"""
         logger.info(f"Uploading {len(batch)} files...")
@@ -358,7 +347,7 @@ class Ren3AgentProcessor:
         return output_path
     
     def process_promo_folder(self, promo_folder_path: str) -> Optional[Path]:
-        """Main processing pipeline"""
+        """Main processing pipeline - ONE FILE AT A TIME"""
         promo_folder = Path(promo_folder_path)
         
         if not promo_folder.exists():
@@ -366,7 +355,7 @@ class Ren3AgentProcessor:
             return None
         
         logger.info("=" * 60)
-        logger.info("REN3 AGENT PROCESSOR")
+        logger.info("REN3 AGENT PROCESSOR - ONE FILE PER RUN")
         logger.info("=" * 60)
         logger.info(f"Processing: {promo_folder.name}")
         logger.info(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -383,24 +372,25 @@ class Ren3AgentProcessor:
                 logger.warning("No JSON files found to process")
                 return None
             
-            # Create batches
-            batches = self.create_batches(json_files)
+            logger.info(f"Total files to process: {len(json_files)}")
+            logger.info(f"Processing ONE file at a time with 20 second delays")
             
-            # Process each batch
+            # Process each file individually
             csv_files = []
             
-            for batch_num, batch in enumerate(batches, 1):
+            for file_num, json_file in enumerate(json_files, 1):
                 logger.info(f"\n{'=' * 60}")
-                logger.info(f"BATCH {batch_num}/{len(batches)}")
+                logger.info(f"FILE {file_num}/{len(json_files)}")
                 logger.info(f"{'=' * 60}")
+                logger.info(f"Processing: {json_file.name}")
                 
                 try:
                     # Generate temp folder UUID
                     temp_folder_uuid = str(uuid.uuid4())
                     logger.info(f"Temp folder: {temp_folder_uuid}")
                     
-                    # Upload files
-                    upload_response = self.upload_files(batch, temp_folder_uuid)
+                    # Upload single file
+                    upload_response = self.upload_files([json_file], temp_folder_uuid)
                     
                     # Wait a bit for ingestion
                     logger.info("Waiting for file ingestion...")
@@ -430,24 +420,28 @@ class Ren3AgentProcessor:
                             break
                     
                     if not csv_file:
-                        logger.warning(f"CSV file not found in output for batch {batch_num}")
+                        logger.warning(f"CSV file not found in output for {json_file.name}")
                         continue
                     
                     # Download CSV
-                    csv_path = processed_dir / f"batch_{batch_num:03d}.csv"
+                    csv_path = processed_dir / f"file_{file_num:03d}_{json_file.stem}.csv"
                     self.download_csv(csv_file['uuid'], csv_path)
                     csv_files.append(csv_path)
                     
-                    logger.info(f"Batch {batch_num} completed successfully")
+                    logger.info(f"✓ File {file_num} completed successfully")
+                    
+                    # Pause 20 seconds before next file (except for last file)
+                    if file_num < len(json_files):
+                        logger.info(" Pausing 20 seconds before next file...")
+                        time.sleep(20)
                     
                 except Exception as e:
-                    logger.error(f"✗ Batch {batch_num} failed: {e}")
+                    logger.error(f"✗ File {file_num} failed: {e}")
+                    # Continue to next file even if this one fails
+                    if file_num < len(json_files):
+                        logger.info("Pausing 20 seconds before next file...")
+                        time.sleep(20)
                     continue
-                
-                # Small delay between batches
-                if batch_num < len(batches):
-                    logger.info("Waiting 5 seconds before next batch...")
-                    time.sleep(5)
             
             # Combine all CSVs
             if csv_files:
@@ -458,13 +452,13 @@ class Ren3AgentProcessor:
                 logger.info(f"\n{'=' * 60}")
                 logger.info("PROCESSING COMPLETE!")
                 logger.info(f"{'=' * 60}")
-                logger.info(f"Processed: {len(csv_files)} batches")
+                logger.info(f"Processed: {len(csv_files)}/{len(json_files)} files")
                 logger.info(f"Output: {final_excel}")
                 logger.info(f"Location: {final_excel.absolute()}")
                 
                 return final_excel
             else:
-                logger.error("No batches were processed successfully")
+                logger.error("No files were processed successfully")
                 return None
                 
         except Exception as e:

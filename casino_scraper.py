@@ -1243,7 +1243,16 @@ def scrape_city_of_dreams_jackpots():
             page.on('response', handle_response)
             
             logger.info(f"  Loading: {url}")
-            page.goto(url, wait_until='networkidle', timeout=60000)
+            try:
+                page.goto(url, wait_until='domcontentloaded', timeout=60000)
+                # Wait for specific content instead of networkidle
+                page.wait_for_selector('body', timeout=10000)
+                page.wait_for_timeout(5000)
+            except Exception as e:
+                logger.warning(f"  Initial load issue: {e}, trying alternative approach")
+                # Fallback: try with even more lenient settings
+                page.goto(url, wait_until='commit', timeout=30000)
+                page.wait_for_timeout(10000)
             
             # Wait for content to load - try multiple wait strategies
             logger.info("  Waiting for content to load...")
@@ -1366,7 +1375,7 @@ def scrape_city_of_dreams_jackpots():
             if len(jackpots) == 0:
                 logger.info("  Trying JavaScript extraction...")
                 try:
-                    js_jackpots = page.evaluate("""
+                    js_jackpots = page.evaluate(r"""
                         () => {
                             const results = [];
                             
@@ -1460,12 +1469,20 @@ def scrape_solaire_jackpots():
             page = context.new_page()
             
             logger.info(f"  Loading: {url}")
-            page.goto(url, wait_until='networkidle', timeout=60000)
-            page.wait_for_timeout(5000)
+            try:
+                page.goto(url, wait_until='domcontentloaded', timeout=60000)
+                # Wait for specific content instead of networkidle
+                page.wait_for_selector('body', timeout=10000)
+                page.wait_for_timeout(5000)
+            except Exception as e:
+                logger.warning(f"  Initial load issue: {e}, trying alternative approach")
+                # Fallback: try with even more lenient settings
+                page.goto(url, wait_until='commit', timeout=30000)
+                page.wait_for_timeout(10000)
             
             # Try to extract jackpot data using JavaScript
             try:
-                jackpot_data = page.evaluate("""
+                jackpot_data = page.evaluate(r"""
                     () => {
                         const jackpots = [];
                         
@@ -1479,7 +1496,7 @@ def scrape_solaire_jackpots():
                         amountElements.forEach(elem => {
                             const text = elem.textContent || '';
                             // Look for Philippine Peso amounts
-                            const amountMatch = text.match(/₱\s*[\d,]+(?:\.\d+)?/g);
+                            const amountMatch = text.match(/[P₱]\s*[\d,]+/g);
                             
                             if (amountMatch) {
                                 amountMatch.forEach(amount => {
@@ -1894,7 +1911,7 @@ def save_individual_promos(all_results: List[Dict[str, Any]], base_filename: str
             failed_count += 1
     
     # Summary
-    logger.info(f"\n📁 Individual Files Summary:")
+    logger.info(f"\nIndividual Files Summary:")
     logger.info(f"  • Total files saved: {saved_count}")
     logger.info(f"  • Failed: {failed_count}")
     logger.info(f"  • Location: {os.path.abspath(folder_name)}")
@@ -1926,7 +1943,7 @@ def save_individual_promos(all_results: List[Dict[str, Any]], base_filename: str
         with open(summary_file, 'w', encoding='utf-8') as f:
             json.dump(summary_data, f, indent=2, ensure_ascii=False)
         
-        logger.info(f"\n  📋 Index file created: _index.json")
+        logger.info(f"\nIndex file created: _index.json")
         
     except Exception as e:
         logger.error(f"  Failed to create index file: {e}")
@@ -1971,7 +1988,7 @@ def create_folder_structure(all_results: List[Dict[str, Any]]):
         casino_folder = os.path.join(main_folder, casino_slug)
         os.makedirs(casino_folder, exist_ok=True)
         
-        logger.info(f"\n  📂 {casino} ({len(promos)} promos)")
+        logger.info(f"\n{casino} ({len(promos)} promos)")
         
         # Save each promo in casino folder
         for i, promo in enumerate(promos, 1):
@@ -2014,9 +2031,9 @@ def create_folder_structure(all_results: List[Dict[str, Any]]):
         with open(index_file, 'w', encoding='utf-8') as f:
             json.dump(index_data, f, indent=2, ensure_ascii=False)
         
-        logger.info(f"\n  ✅ Total files saved: {total_saved}")
-        logger.info(f"  📋 Index file: _index.json")
-        logger.info(f"  📍 Location: {os.path.abspath(main_folder)}")
+        logger.info(f"\nTotal files saved: {total_saved}")
+        logger.info(f"Index file: _index.json")
+        logger.info(f"Location: {os.path.abspath(main_folder)}")
         
     except Exception as e:
         logger.error(f"  Failed to create index: {e}")
@@ -2026,4 +2043,7 @@ def create_folder_structure(all_results: List[Dict[str, Any]]):
 
 # THIS IS THE MOST IMPORTANT PART - IT ACTUALLY RUNS THE SCRIPT!
 if __name__ == "__main__":
+
     results = main()
+
+

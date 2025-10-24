@@ -5,9 +5,6 @@ WORKDIR /app
 # Install cron
 RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
 
-# Create python symlink
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
 # Copy requirements
 COPY requirements.txt .
 

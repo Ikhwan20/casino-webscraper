@@ -82,7 +82,7 @@ def main():
         
         if result:
             logger.info("=" * 60)
-            logger.info("✅ PROCESSING COMPLETE!")
+            logger.info("PROCESSING COMPLETE!")
             logger.info(f"Final output: {result}")
             logger.info("=" * 60)
             sys.exit(0)
